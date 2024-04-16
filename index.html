@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Space Game</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Full screen view */
+    }
+    canvas {
+        display: block;
+        background-color: #000;
+    }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+    // Get the canvas and its 2D rendering context
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas dimensions to full screen
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Define the player object
+    let player = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        size: 50,
+        color: '#00ff00',
+        speed: canvas.width * 0.07 // 7% of screen width for movement
+    };
+
+    // Array to store stars
+    const stars = [];
+    const starSpeed = 2;
+
+    let score = 0;
+
+    // Function to create a new star
+    function createStar() {
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']; // Colors for stars
+        const starColor = colors[Math.floor(Math.random() * colors.length)]; // Random color for star
+        const star = {
+            x: Math.random() * canvas.width,
+            y: -30,
+            size: 10,
+            color: starColor,
+            speed: starSpeed
+        };
+        stars.push(star);
+    }
+
+    // Generate initial stars
+    for (let i = 0; i < 5; i++) {
+        createStar();
+    }
+
+    // Update function to handle game logic and rendering
+    function update() {
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Move and draw the player
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.size, player.size);
+
+        // Move and draw the stars
+        stars.forEach((star, index) => {
+            ctx.fillStyle = star.color;
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Update star position
+            star.y += star.speed;
+
+            // Check for collision with player
+            if (
+                player.x < star.x + star.size &&
+                player.x + player.size > star.x &&
+                player.y < star.y + star.size &&
+                player.y + player.size > star.y
+            ) {
+                score++;
+                stars.splice(index, 1); // Remove consumed star
+                createStar(); // Create a new star
+
+                // Change player color based on the consumed star color
+                player.color = star.color;
+
+                // Check score for size increase and milestone text
+                if (score % 5 === 0) {
+                    player.size += player.size * 0.05; // Increase size by 5%
+                    displayMilestoneText('George Mattar Scored: ' + score, 'white', 10000); // Display milestone text for 10 seconds
+                }
+            }
+
+            // Remove stars that have fallen past the canvas height
+            if (star.y > canvas.height) {
+                stars.splice(index, 1); // Remove star
+                createStar(); // Create a new star
+            }
+        });
+
+        // Draw score
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '24px Arial';
+        ctx.fillText('Score: ' + score, 10, 30);
+
+        // Request animation frame to update the game continuously
+        requestAnimationFrame(update);
+    }
+
+    // Function to display milestone text for a specified duration
+    function displayMilestoneText(text, color, duration) {
+        const textWidth = ctx.measureText(text).width;
+        const textHeight = parseInt(ctx.font);
+        const fontSize = 50; // Font size for milestone text
+        ctx.font = fontSize + 'px Arial'; // Set font size
+
+        // Calculate text position
+        const x = (canvas.width - textWidth) / 2;
+        const y = canvas.height / 10; // Place text at the top center of the canvas
+
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y);
+
+        setTimeout(() => {
+            ctx.clearRect(x, y - fontSize, textWidth, fontSize);
+        }, duration);
+    }
+
+    // Event listener for keyboard input to move the player
+    document.addEventListener('keydown', (event) => {
+        const key = event.key;
+
+        if (key === 'ArrowLeft' && player.x > canvas.width * 0.07) {
+            player.x -= player.speed;
+        } else if (key === 'ArrowRight' && player.x < canvas.width * 0.93 - player.size) {
+            player.x += player.speed;
+        } else if (key === 'ArrowUp' && player.y > canvas.height * 0.07) {
+            player.y -= player.speed;
+        } else if (key === 'ArrowDown' && player.y < canvas.height * 0.93 - player.size) {
+            player.y += player.speed;
+        }
+    });
+
+    // Start the game loop initially
+    update();
+</script>
+</body>
+</html>
